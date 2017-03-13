@@ -162,7 +162,6 @@ def main():
 	while True:
 		params = {'id': next_change_id}
 		r = requests.get(url_api, params = params)
-		print(r.request.headers)
 
 		## parsing structure
 		data = r.json()
