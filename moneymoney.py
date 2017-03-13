@@ -84,8 +84,8 @@ def find_items(stashes):
 					price_normalized = float(re.findall(r'\d+', price)[0])
 					item_value = get_item_value(name, frameType)
 
-					if item_value is not 0 and (item_value - price_normalized) > 3.0:
-						if 'Atziri' in name or 'Sadima' in name:
+					if item_value is not 0 and (item_value - price_normalized) > 3.0 and price_normalized is not 0:
+						if 'Atziri' in name or 'Sadima' in name or 'Drillneck' in name:
 							continue
 
 
@@ -107,11 +107,10 @@ def find_items(stashes):
 								cprint(msg, 'red')
 							elif perc_decrease >= 30:
 								cprint(msg, 'yellow')
-							#elif frameType >= 20:
-								#cprint(msg, 'green')
-
-							#elif frameType >= 10:
-								#cprint(msg, 'white')
+							elif frameType >= 20:
+								cprint(msg, 'green')
+							elif frameType >= 10:
+								cprint(msg, 'white')
 							#else:
 								#print(msg)
 
@@ -127,6 +126,7 @@ def main():
 	global map_price
 	global flask_price
 
+	print("Searching for mispriced items..." )
 	url_api = "http://www.pathofexile.com/api/public-stash-tabs?id="
 
 	# get the next change id
@@ -134,33 +134,35 @@ def main():
 	next_change_id = r.json().get('nextChangeId')
 
 	# get unique armour value
-	url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueArmourOverview?league=Legacy&date=2017-03-12"
+	url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueArmourOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
 	r = requests.get(url_ninja)
 	armor_price = r.json().get('lines')
 
 	# get unique weapons
-	url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueWeaponOverview?league=Legacy&date=2017-03-12"
+	url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueWeaponOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
 	r = requests.get(url_ninja)
 	weps_price = r.json().get('lines')
 
 	# get divination card
-	url_divi = "http://api.poe.ninja/api/Data/GetDivinationCardsOverview?league=Legacy&date=2017-03-12"
+	url_divi = "http://api.poe.ninja/api/Data/GetDivinationCardsOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
 	r = requests.get(url_divi)
 	div_price = r.json().get('lines')
 
 	# get maps
-	url_map = "http://api.poe.ninja/api/Data/GetMapOverview?league=Legacy&date=2017-03-12"
+	url_map = "http://api.poe.ninja/api/Data/GetMapOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
 	r = requests.get(url_map)
 	map_price = r.json().get('lines')
 
 	# get flask
-	url_map = "http://cdn.poe.ninja/api/Data/GetUniqueFlaskOverview?league=Legacy"
+	url_map = "http://cdn.poe.ninja/api/Data/GetUniqueFlaskOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
 	r = requests.get(url_map)
 	flask_price = r.json().get('lines')
 
+	
 	while True:
 		params = {'id': next_change_id}
 		r = requests.get(url_api, params = params)
+		print(r.request.headers)
 
 		## parsing structure
 		data = r.json()
