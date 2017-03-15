@@ -3,8 +3,10 @@ import requests
 import re
 import sys
 from termcolor import colored, cprint
+import datetime
+from datetime import datetime
+import os.path
 from pprint import pprint
-
 
 armor_price = []
 weps_price = []
@@ -40,15 +42,51 @@ def get_item_value(itemName, itemClass):
 			return float(map.get('chaosValue'))
 
 	return 0
+
 def getFrameType(frameType):
-	if frameType == 3: return "UNI"
-	if frameType == 4: return "GEM"
-	if frameType == 5: return "CUR"
-	if frameType == 6: return "DIV"
-	if frameType == 9: return "LEG"
+	if frameType == 3: return "Unique"
+	if frameType == 4: return "Gem"
+	if frameType == 5: return "Currency"
+	if frameType == 6: return "Divination Card"
+	if frameType == 9: return "Relic"
 
 	return frameType
 
+def writeFile(text):
+	for k,v in text.items():
+		#todo make long string and write to file instead of writing each line
+		with open ('money_poe_log.txt', "a+") as f:
+			if k is not 'msg':
+				f.write(str(k))
+				f.write(': ')
+			f.write(str(v))
+			f.write('\n')
+	with open ('money_poe_log.txt', "a+") as f:
+		f.write('\n')
+
+	return
+
+def links(sockets):
+	link_count = 0
+	for socket in sockets:
+		# print(socket)
+		try:
+			group = socket["group"]
+			if group >= link_count:
+				link_count = group
+			#print("group:", group)
+			return link_count
+		except KeyError:
+			pass
+	return link_count
+
+def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
+    enc = file.encoding
+    if enc == 'UTF-8':
+        print(*objects, sep=sep, end=end, file=file)
+    else:
+        f = lambda obj: str(obj).encode(enc, errors='backslashreplace').decode(enc)
+        print(*map(f, objects), sep=sep, end=end, file=file)
 
 def find_items(stashes):
 	# scan stashes available...
@@ -65,6 +103,9 @@ def find_items(stashes):
 				name = re.sub(r'<<.*>>', '', item.get('name',None))
 				price = item.get('note', None)
 				frameType = item.get('frameType', None)
+				sockets = item.get('sockets')
+				sockets_count = len(sockets)
+				links_count = links(sockets)
 
 				# for divination
 				if name is None or name == "":
@@ -82,37 +123,45 @@ def find_items(stashes):
 						continue
 
 					price_normalized = float(re.findall(r'\d+', price)[0])
+
 					item_value = get_item_value(name, frameType)
 
+					# File output setup
 					if item_value is not 0 and (item_value - price_normalized) > 3.0 and price_normalized is not 0:
 						if 'Atziri' in name or 'Sadima' in name or 'Drillneck' in name:
 							continue
-
 
 						price = price.replace("~b/o ", "")
 						price = price.replace("~price ", "")
 
 
 						try:
-
+							#time_scanned = datetime.now().time()
+							cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
 							perc_decrease = ((item_value - price_normalized) / item_value) * 100
-
-							msg = "[{} - {}c/{}c - {}%] @{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {}) -- {}".format(
-								getFrameType(frameType), price_normalized, item_value, round(perc_decrease),
-
-								lastCharacterName, name, price, stashName, item.get('x'), item.get('y'), item.get('note')
+							prefix = "[{} - {}c/{}c - {}%]".format(getFrameType(frameType), price_normalized, item_value, round(perc_decrease))
+							profit = round(item_value - price_normalized)
+							msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(
+								lastCharacterName, name, price, stashName, item.get('x'), item.get('y')
 							)
 
-							if perc_decrease >= 50:
-								cprint(msg, 'red')
-							elif perc_decrease >= 30:
-								cprint(msg, 'yellow')
-							elif frameType >= 20:
-								cprint(msg, 'green')
-							elif frameType >= 10:
-								cprint(msg, 'white')
-							#else:
-								#print(msg)
+							file_content = {
+								'Corrupted': item.get('corrupted'),
+								'Profit': '{}c'.format(profit),
+								'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
+								'Type': getFrameType(frameType),
+								'Info': '{}S {}L'.format(sockets_count, links_count),
+								'ILVL': item.get('ilvl'),
+								'msg': msg
+							}
+							# uprint(file_content_block)
+							# writeFile(file_content)
+
+
+							if perc_decrease >= 10:
+								print(msg)
+								writeFile(file_content)
+								writeFile('\n')
 
 						except:
 							pass
@@ -126,7 +175,7 @@ def main():
 	global map_price
 	global flask_price
 
-	print("Searching for mispriced items..." )
+	print("Gimme gimme gimme....")
 	url_api = "http://www.pathofexile.com/api/public-stash-tabs?id="
 
 	# get the next change id
@@ -158,7 +207,7 @@ def main():
 	r = requests.get(url_map)
 	flask_price = r.json().get('lines')
 
-	
+
 	while True:
 		params = {'id': next_change_id}
 		r = requests.get(url_api, params = params)
@@ -172,8 +221,8 @@ def main():
 		## attempt to find items...
 		find_items(data['stashes'])
 
-		## wait 5 seconds until parsing next structure
-		time.sleep(1)
+		## wait 0 seconds until parsing next structure
+		time.sleep(0)
 
 if __name__ == "__main__":
     main()
