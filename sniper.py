@@ -2,7 +2,6 @@ import time
 import requests
 import re
 import sys
-from termcolor import colored, cprint
 import datetime
 from datetime import datetime
 import os.path
@@ -53,17 +52,16 @@ def getFrameType(frameType):
 	return frameType
 
 def writeFile(text):
+	t = ''
 	for k,v in text.items():
-		#todo make long string and write to file instead of writing each line
-		with open ('money_poe_log.txt', "a+") as f:
-			if k is not 'msg':
-				f.write(str(k))
-				f.write(': ')
-			f.write(str(v))
-			f.write('\n')
-	with open ('money_poe_log.txt', "a+") as f:
+		if k is not 'msg':
+			t += str(k)
+			t += ': '
+		t += str(v)
+		t += '\n'
+	with open ('sniper.log', "a+") as f:
+		f.write(t)
 		f.write('\n')
-
 	return
 
 def links(sockets):
@@ -71,13 +69,15 @@ def links(sockets):
 	for socket in sockets:
 		# print(socket)
 		try:
-			group = socket["group"]
-			if group >= link_count:
-				link_count = group
-			#print("group:", group)
-			return link_count
+			temp = socket["group"]
+			if temp >= link_count:
+				link_count = temp
 		except KeyError:
+			print('KeyError in links()')
 			pass
+		except:
+			print('Error in links()')
+
 	return link_count
 
 def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
@@ -131,6 +131,10 @@ def find_items(stashes):
 						if 'Atziri' in name or 'Sadima' in name or 'Drillneck' in name:
 							continue
 
+						# If item cannot be 6socketed
+						if frameType is 'Relic' or 'Unique' and item.get('ilvl') < 50:
+							print(typeLine)
+
 						price = price.replace("~b/o ", "")
 						price = price.replace("~price ", "")
 
@@ -157,11 +161,19 @@ def find_items(stashes):
 							# uprint(file_content_block)
 							# writeFile(file_content)
 
-
+							if perc_decrease >= 30:
+								print('\a')
+								print(msg)
+								try:
+									writeFile(file_content)
+								except:
+									print('error writing file')
 							if perc_decrease >= 10:
 								print(msg)
-								writeFile(file_content)
-								writeFile('\n')
+								try:
+									writeFile(file_content)
+								except:
+									print('error writing file')
 
 						except:
 							pass
@@ -221,7 +233,7 @@ def main():
 		## attempt to find items...
 		find_items(data['stashes'])
 
-		## wait 0 seconds until parsing next structure
+		## wait 5 seconds until parsing next structure
 		time.sleep(0)
 
 if __name__ == "__main__":
