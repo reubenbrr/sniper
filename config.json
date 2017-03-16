@@ -10,6 +10,7 @@
 	"Output": {
 		"FileName": "itemlist",
 		"LogVerbose": "true",
-		"ConsoleVerbose": "false"
+		"ConsoleVerbose": "false",
+		"CleanFile": "false"
 	}
 }

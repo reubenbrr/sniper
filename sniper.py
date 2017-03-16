@@ -64,16 +64,24 @@ def getFrameType(frameType):
 
 def writeFile(text):
 	t = ''
-	for k,v in text.items():
-		if k is not 'msg':
-			t += str(k)
-			t += ': '
-		t += str(v)
-		t += '\n'
-	with open (config['Output']['FileName']+'.log', "a+") as f:
-		f.write(t)
-		f.write('\n')
-	return
+	filename = config['Output']['FileName']+'.log'
+
+	#Empties File
+	if text is 'init' and config['Output']['CleanFile'] == 'true':
+		with open(filename, 'w'):
+			pass
+		return
+	else:
+		for k,v in text.items():
+			if k is not 'msg':
+				t += str(k)
+				t += ': '
+			t += str(v)
+			t += '\n'
+		with open (filename, "a+") as f:
+			f.write(t)
+			f.write('\n')
+		return
 
 def links(sockets):
 	link_count = 0
@@ -209,6 +217,7 @@ def main():
 	global flask_price
 
 	print("Gimme gimme gimme....")
+	writeFile('init')
 	url_api = "http://www.pathofexile.com/api/public-stash-tabs?id="
 
 	# get the next change id
