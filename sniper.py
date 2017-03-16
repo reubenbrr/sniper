@@ -160,15 +160,21 @@ def find_items(stashes):
 							}
 							# uprint(file_content_block)
 							# writeFile(file_content)
-
-							if perc_decrease >= 30:
+							if perc_decrease >= 90 and perc_decrease <= 99:
+								print('\a\a\a\a')
+								print(msg)
+								try:
+									writeFile(file_content)
+								except:
+									print('error writing file')
+							elif perc_decrease >= 30:
 								print('\a')
 								print(msg)
 								try:
 									writeFile(file_content)
 								except:
 									print('error writing file')
-							if perc_decrease >= 10:
+							elif perc_decrease >= 10:
 								print(msg)
 								try:
 									writeFile(file_content)
