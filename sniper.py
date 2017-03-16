@@ -227,20 +227,23 @@ def main():
 
 
 	while True:
-		params = {'id': next_change_id}
-		r = requests.get(url_api, params = params)
+		try:
+			params = {'id': next_change_id}
+			r = requests.get(url_api, params = params)
 
-		## parsing structure
-		data = r.json()
+			## parsing structure
+			data = r.json()
 
-		## setting next change id
-		next_change_id = data['next_change_id']
+			## setting next change id
+			next_change_id = data['next_change_id']
 
-		## attempt to find items...
-		find_items(data['stashes'])
+			## attempt to find items...
+			find_items(data['stashes'])
 
-		## wait 5 seconds until parsing next structure
-		time.sleep(0)
+			## wait 5 seconds until parsing next structure
+			time.sleep(0)
+		except:
+			print('Error retrieving json')
 
 if __name__ == "__main__":
     main()
