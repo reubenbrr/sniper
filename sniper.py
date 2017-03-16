@@ -5,6 +5,8 @@ import sys
 import datetime
 from datetime import datetime
 import os.path
+import configparser, os
+import json
 from pprint import pprint
 
 armor_price = []
@@ -12,6 +14,15 @@ weps_price = []
 div_price = []
 map_price = []
 flask_price = []
+
+def get_config():
+	with open('config.json') as config:
+		data = json.load(config)
+		print('Config loaded:\n')
+		print(data)
+		return(data)
+
+config = get_config()
 
 def get_item_value(itemName, itemClass):
 	global armor_price
@@ -59,7 +70,7 @@ def writeFile(text):
 			t += ': '
 		t += str(v)
 		t += '\n'
-	with open ('sniper.log', "a+") as f:
+	with open (config['Output']['FileName']+'.log', "a+") as f:
 		f.write(t)
 		f.write('\n')
 	return
@@ -98,6 +109,7 @@ def find_items(stashes):
 
 		# scan items
 		for item in items:
+
 			if item.get('league') == 'Legacy':
 				typeLine = item.get('typeLine', None)
 				name = re.sub(r'<<.*>>', '', item.get('name',None))
@@ -110,9 +122,6 @@ def find_items(stashes):
 				# for divination
 				if name is None or name == "":
 					name = typeLine
-
-				#if "Rain of" in name or "Map" in name:
-				#	print (name, get_item_value(name, frameType))
 
 				## compare unique that worth at least 1 chaos.
 				if price and name and 'chaos' in price:
@@ -131,13 +140,19 @@ def find_items(stashes):
 						if 'Atziri' in name or 'Sadima' in name or 'Drillneck' in name:
 							continue
 
+						# If config set to hide corrupted gear
+						# if config['Filter']['ShowCorrupted'] is 'true' and (frameType is 'Relic' or 'Unique' and item.get('corrupted') == True):
+						# 	print(config.Filter.ShowCorrupted)
+						# 	continue
+						# else:
+						# 	print(config.Filter.ShowCorrupted)
+
 						# If item cannot be 6socketed
-						if frameType is 'Relic' or 'Unique' and item.get('ilvl') < 50:
-							print(typeLine)
+						# if (frameType is 'Relic' or 'Unique' and item.get('ilvl') < config['Filter']['MinIlvl']):
+						# 	continue
 
 						price = price.replace("~b/o ", "")
 						price = price.replace("~price ", "")
-
 
 						try:
 							#time_scanned = datetime.now().time()
@@ -159,8 +174,7 @@ def find_items(stashes):
 								'ILVL': item.get('ilvl'),
 								'msg': msg
 							}
-							# uprint(file_content_block)
-							# writeFile(file_content)
+
 							if perc_decrease >= 90 and perc_decrease <= 99:
 								print('\a\a\a')
 								print(console)
@@ -243,8 +257,12 @@ def main():
 
 			## wait 5 seconds until parsing next structure
 			time.sleep(0)
+		except KeyboardInterrupt:
+			print("Closing Sniper")
+			sys.exit(1)
 		except:
 			pass
+
 
 if __name__ == "__main__":
     main()

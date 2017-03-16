@@ -1,0 +1,15 @@
+{
+	"Filter": {
+		"ShowCorrupted": "false",
+		"MinIlvl": "50",
+		"HideItems": [
+			"Agnerod South",
+			"Agnerod West"
+		]
+	},
+	"Output": {
+		"FileName": "itemlist",
+		"LogVerbose": "true",
+		"ConsoleVerbose": "false"
+	}
+}
