@@ -148,6 +148,7 @@ def find_items(stashes):
 							msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(
 								lastCharacterName, name, price, stashName, item.get('x'), item.get('y')
 							)
+							console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
 
 							file_content = {
 								'Corrupted': item.get('corrupted'),
@@ -161,21 +162,21 @@ def find_items(stashes):
 							# uprint(file_content_block)
 							# writeFile(file_content)
 							if perc_decrease >= 90 and perc_decrease <= 99:
-								print('\a\a\a\a')
-								print(msg)
+								print('\a\a\a')
+								print(console)
 								try:
 									writeFile(file_content)
 								except:
 									print('error writing file')
 							elif perc_decrease >= 30:
 								print('\a')
-								print(msg)
+								print(console)
 								try:
 									writeFile(file_content)
 								except:
 									print('error writing file')
 							elif perc_decrease >= 10:
-								print(msg)
+								print(console)
 								try:
 									writeFile(file_content)
 								except:
@@ -243,7 +244,7 @@ def main():
 			## wait 5 seconds until parsing next structure
 			time.sleep(0)
 		except:
-			print('Error retrieving json')
+			pass
 
 if __name__ == "__main__":
     main()

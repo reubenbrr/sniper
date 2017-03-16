@@ -7,3 +7,7 @@
 ```
 pip install requests
 ```
+- Then type in terminal/cmd
+```
+sniper.py
+```
