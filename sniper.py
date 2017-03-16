@@ -5,9 +5,10 @@ import sys
 import datetime
 from datetime import datetime
 import os.path
-import configparser, os
+import configparser,os
 import json
 from pprint import pprint
+# pylint: disable=W0312, C0301
 
 armor_price = []
 weps_price = []
@@ -20,7 +21,7 @@ def get_config():
 		data = json.load(config)
 		print('Config loaded:\n')
 		print(data)
-		return(data)
+		return data
 
 config = get_config()
 
@@ -71,14 +72,16 @@ def writeFile(text):
 		with open(filename, 'w'):
 			pass
 		return
+	elif text is 'init':
+		return
 	else:
-		for k,v in text.items():
+		for k, v in text.items():
 			if k is not 'msg':
 				t += str(k)
 				t += ': '
 			t += str(v)
 			t += '\n'
-		with open (filename, "a+") as f:
+		with open(filename, "a+") as f:
 			f.write(t)
 			f.write('\n')
 		return
@@ -111,7 +114,7 @@ def find_items(stashes):
 	# scan stashes available...
 	for stash in stashes:
 		accountName = stash['accountName']
-		lastCharacterName =  stash['lastCharacterName']
+		lastCharacterName = stash['lastCharacterName']
 		items = stash['items']
 		stashName = stash.get('stash')
 
@@ -120,7 +123,7 @@ def find_items(stashes):
 
 			if item.get('league') == 'Legacy':
 				typeLine = item.get('typeLine', None)
-				name = re.sub(r'<<.*>>', '', item.get('name',None))
+				name = re.sub(r'<<.*>>', '', item.get('name', None))
 				price = item.get('note', None)
 				frameType = item.get('frameType', None)
 				sockets = item.get('sockets')
@@ -149,11 +152,11 @@ def find_items(stashes):
 							continue
 
 						# If config set to hide corrupted gear
-						# if config['Filter']['ShowCorrupted'] is 'true' and (frameType is 'Relic' or 'Unique' and item.get('corrupted') == True):
-						# 	print(config.Filter.ShowCorrupted)
-						# 	continue
-						# else:
-						# 	print(config.Filter.ShowCorrupted)
+						if config['Filter']['ShowCorrupted'] == 'true' and (frameType is 'Relic' or 'Unique' and item.get('corrupted') == True):
+							print(config.Filter.ShowCorrupted)
+							continue
+						else:
+							print(config.Filter.ShowCorrupted)
 
 						# If item cannot be 6socketed
 						# if (frameType is 'Relic' or 'Unique' and item.get('ilvl') < config['Filter']['MinIlvl']):
@@ -168,20 +171,18 @@ def find_items(stashes):
 							perc_decrease = ((item_value - price_normalized) / item_value) * 100
 							prefix = "[{} - {}c/{}c - {}%]".format(getFrameType(frameType), price_normalized, item_value, round(perc_decrease))
 							profit = round(item_value - price_normalized)
-							msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(
-								lastCharacterName, name, price, stashName, item.get('x'), item.get('y')
-							)
+							msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, stashName, item.get('x'), item.get('y'))
 							console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
 
 							file_content = {
-								'Corrupted': item.get('corrupted'),
-								'Profit': '{}c'.format(profit),
-								'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
-								'Type': getFrameType(frameType),
-								'Info': '{}S {}L'.format(sockets_count, links_count),
-								'ILVL': item.get('ilvl'),
-								'msg': msg
-							}
+									'Corrupted': item.get('corrupted'),
+									'Profit': '{}c'.format(profit),
+									'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
+									'Type': getFrameType(frameType),
+									'Info': '{}S {}L'.format(sockets_count, links_count),
+									'ILVL': item.get('ilvl'),
+									'msg': msg
+								}
 
 							if perc_decrease >= 90 and perc_decrease <= 99:
 								print('\a\a\a')
@@ -253,7 +254,7 @@ def main():
 	while True:
 		try:
 			params = {'id': next_change_id}
-			r = requests.get(url_api, params = params)
+			r = requests.get(url_api, params=params)
 
 			## parsing structure
 			data = r.json()

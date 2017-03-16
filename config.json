@@ -3,8 +3,7 @@
 		"ShowCorrupted": "false",
 		"MinIlvl": "50",
 		"HideItems": [
-			"Agnerod South",
-			"Agnerod West"
+			"Cherrubim's Maleficence"
 		]
 	},
 	"Output": {
