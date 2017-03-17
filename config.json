@@ -2,14 +2,19 @@
 	"Filter": {
 		"ShowCorrupted": "false",
 		"MinIlvl": "50",
-		"HideItems": [
-			"Cherrubim's Maleficence"
+		"Ignore": [
+			"Cherrubim's Maleficence",
+			"Abyssus",
+			"Rigwald's Quills"
+			"Atziri"
 		]
 	},
 	"Output": {
 		"FileName": "itemlist",
 		"LogVerbose": "true",
 		"ConsoleVerbose": "false",
-		"CleanFile": "false"
+		"CleanFile": "false",
+		"Alert": "true",
+		"AlertThreshold": "50"
 	}
 }
