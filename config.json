@@ -1,12 +1,21 @@
 {
 	"Filter": {
 		"ShowCorrupted": "false",
+		"AllowCorrupted": [
+			"Tabula Rasa"
+		],
 		"MinIlvl": "50",
 		"Ignore": [
 			"Cherrubim's Maleficence",
 			"Abyssus",
 			"Rigwald's Quills",
-			"Atziri"
+			"Atziri",
+			"Goldwyrm",
+			"Belly of the Beast",
+			"Searing Touch",
+			"Valkyrie",
+			"Hand of Wisdom and Action",
+			"Sadima"
 		]
 	},
 	"Output": {
@@ -15,6 +24,11 @@
 		"ConsoleVerbose": "false",
 		"CleanFile": "false",
 		"Alert": "true",
-		"AlertThreshold": "50"
+		"AlertThreshold": {
+			"PercentHigh": "50",
+			"PercentMid": "30",
+			"ProfitHigh": "20",
+			"ProfitMid": "10"
+		}
 	}
 }

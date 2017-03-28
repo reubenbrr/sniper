@@ -9,7 +9,7 @@ import configparser
 import os
 import json
 from pprint import pprint
-# pylint: disable=W0312, C0301, C0111, C0103
+# pylint: disable=W0312, C0301, C0111, C0103, C0330, W0602, C0111,
 
 armor_price = []
 weps_price = []
@@ -19,8 +19,8 @@ flask_price = []
 
 
 def get_config():
-	with open('config.json') as config:
-		data = json.load(config)
+	with open('config.json') as cfg:
+		data = json.load(cfg)
 		print('Config loaded:\n')
 		print(data)
 		return data
@@ -46,22 +46,27 @@ def get_item_value(itemName, itemClass):
 		if div.get('name') == itemName:
 			return float(div.get('chaosValue'))
 
-	for map in map_price:
-		if map.get('name') == itemName:
-			return float(map.get('chaosValue'))
+	for map_item in map_price:
+		if map_item.get('name') == itemName:
+			return float(map_item.get('chaosValue'))
 
 	for flask in flask_price:
 		if flask.get('name') == itemName:
-			return float(map.get('chaosValue'))
+			return float(flask.get('chaosValue'))
 
 	return 0
 
 def getFrameType(frameType):
-	if frameType == 3: return "Unique"
-	if frameType == 4: return "Gem"
-	if frameType == 5: return "Currency"
-	if frameType == 6: return "Divination Card"
-	if frameType == 9: return "Relic"
+	if frameType == 3:
+		return "Unique"
+	if frameType == 4:
+		return "Gem"
+	if frameType == 5:
+		return "Currency"
+	if frameType == 6:
+		return "Divination Card"
+	if frameType == 9:
+		return "Relic"
 
 	return frameType
 
@@ -77,7 +82,7 @@ def writeFile(text):
 	elif text is 'init':
 		return
 	else:
-		for k, v in text.items():
+		for k, v in sorted(text.items()):
 			if k is not 'msg':
 				t += str(k)
 				t += ': '
@@ -132,6 +137,7 @@ def find_items(stashes):
 				links_count = links(sockets)
 
 				ShowCorrupted = config['Filter']['ShowCorrupted']
+				AllowCorrupted = config['Filter']['AllowCorrupted']
 				IgnoreList = config['Filter']['Ignore']
 
 				item_ignored = False
@@ -157,14 +163,16 @@ def find_items(stashes):
 						skip = False
 
 						# If config set to hide corrupted gear
-						if ShowCorrupted == 'true' and ((frameType is 'Relic' or 'Unique') and item.get('corrupted') == True):
-							print('Skipping corrupted item as setting is '+ShowCorrupted)
-							skip = True
+						if ShowCorrupted == 'false' and ((frameType is 'Relic' or 'Unique') and item.get('corrupted') == True):
+							for AllowName in AllowCorrupted:
+								if AllowName not in name:
+									print('Skipping item "'+name+'" for being corrupted')
+									skip = True
 
 						for ignore in IgnoreList:
 							if str(ignore) in name:
 								skip = True
-								print('Skipping item '+ignore+' from filter')
+								print('Skipping item "'+name+'" for containing "'+ignore+'" from filter')
 
 						# If item cannot be 6socketed
 						# if (frameType is 'Relic' or 'Unique' and item.get('ilvl') < config['Filter']['MinIlvl']):
@@ -181,6 +189,11 @@ def find_items(stashes):
 								profit = round(item_value - price_normalized)
 								msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, stashName, item.get('x'), item.get('y'))
 								console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
+								alert = False
+								alert_percent_high = config['Output']['AlertTheshold']['PercentHigh']
+								alert_profit_high = config['Output']['AlertTheshold']['ProfitHigh']
+								alert_percent_mid = config['Output']['AlertTheshold']['PercentMid']
+								alert_profit_mid = config['Output']['AlertTheshold']['ProfitMid']
 
 								file_content = {
 									'Corrupted': item.get('corrupted'),
@@ -192,28 +205,27 @@ def find_items(stashes):
 									'msg': msg
 								}
 
-								if perc_decrease >= 90 and perc_decrease <= 99:
-									print('\a\a\a')
-									print(console)
-									try:
-										writeFile(file_content)
-									except:
-										print('error writing file')
-								elif perc_decrease >= 50:
-									print('\a')
-									print(console)
-									try:
-										writeFile(file_content)
-									except:
-										print('error writing file')
-								elif perc_decrease >= 10:
-									print(console)
-									try:
-										writeFile(file_content)
-									except:
-										print('error writing file')
+								if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
+								 	alert = 3
+								elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
+								 	alert = 2
+								else:
+									alert = False
 
-							except:
+
+								# if price > 0:
+								if alert != False:
+									console.log('Alert level: '+alert)
+									for x in range(0, alert):
+										print ('\a')
+								print(console)
+								try:
+									writeFile(file_content)
+								except:
+									print('error writing file')
+								# else:
+								# 	print('Price is {} so skipping').format(price)
+							except BaseException as e:
 								pass
 
 def main():
@@ -223,7 +235,7 @@ def main():
 	global map_price
 	global flask_price
 
-	print("Gimme gimme gimme....")
+	print("\nGimme gimme gimme....\n")
 	writeFile('init')
 	url_api = "http://www.pathofexile.com/api/public-stash-tabs?id="
 
