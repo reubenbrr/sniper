@@ -60,20 +60,26 @@ def get_item_value(item_info):
 		for flask in flask_price:
 			if flask.get('name') == item_info['name'] and flask.get('itemClass') == item_info['type']:
 				if 'Vinktar' in item_info['name']:
-					variation = str(flask.get('variation'))
+					variation = str(flask.get('variant'))
 					explicit = str(item_info['explicit'])
+					print('Vinktar')
 
-					print(variation)
-
-					if 'Penetration' in explicit and variation is "Penetration":
+					if 'Penetrates' in explicit and "Penetration" in variation:
+						print('Penetration')
+						print(variation)
 						return float(flask.get('chaosValue'))
-					elif 'Attacks' in explicit and variation is 'Added Attacks':
+					elif 'Attacks' in explicit and 'Added Attacks' in variation:
+						print('Attacks')
+						print(variation)
 						return float(flask.get('chaosValue'))
-					elif 'Spells' in explicit and variation is 'Added Spells':
+					elif 'Spells' in explicit and 'Added Spells' in variation:
+						print('Spells')
+						print(variation)
 						return float(flask.get('chaosValue'))
-					elif 'Converted' in explicit and variation is 'Conversion':
+					elif 'Converted' in explicit and 'Conversion' in variation:
+						print('Converted')
+						print(variation)
 						return float(flask.get('chaosValue'))
-
 				else:
 					return float(flask.get('chaosValue'))
 
@@ -273,17 +279,18 @@ def find_items(stashes):
 						else:
 							alert = False
 
-
-						# if price > 0:
-						if alert != False:
-							print('Alert level: {}'.format(alert))
-							for i in range(alert):
-								print('\a')
 						print(console)
+
 						try:
+							if alert != False:
+								vprint('Alert level: {}'.format(alert))
+								for i in range(alert):
+									print('\a')
 							writeFile(file_content)
 						except:
 							print('error writing file')
+
+
 						# else:
 						# 	print('Price is {} so skipping').format(price)
 					except BaseException as e:
