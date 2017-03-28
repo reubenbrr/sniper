@@ -9,6 +9,7 @@ import configparser
 import os
 import json
 from pprint import pprint
+from difflib import SequenceMatcher
 # pylint: disable=W0312, C0301, C0111, C0103, C0330, W0602, C0111,
 
 armor_price = []
@@ -27,32 +28,40 @@ def get_config():
 
 config = get_config()
 
-def get_item_value(itemName, itemClass):
+def similar(a, b):
+	return SequenceMatcher(None, a, b).ratio()
+
+def get_item_value(item_info):
 	global armor_price
 	global weps_price
 	global div_price
 	global map_price
 	global flask_price
 
-	for armor in armor_price:
-		if armor.get('name') == itemName and armor.get('itemClass') == itemClass:
-			return float(armor.get('chaosValue'))
+	try:
+		for armor in armor_price:
+			if armor.get('name') == item_info['name'] and armor.get('itemClass') == item_info['type']:
+				return float(armor.get('chaosValue'))
 
-	for weps in weps_price:
-		if weps.get('name') == itemName and weps.get('itemClass') == itemClass:
-			return float(weps.get('chaosValue'))
+		for weps in weps_price:
+			if weps.get('name') == item_info['name'] and weps.get('itemClass') == item_info['type']:
+				return float(weps.get('chaosValue'))
 
-	for div in div_price:
-		if div.get('name') == itemName:
-			return float(div.get('chaosValue'))
+		for div in div_price:
+			if div.get('name') == item_info['name']:
+				return float(div.get('chaosValue'))
 
-	for map_item in map_price:
-		if map_item.get('name') == itemName:
-			return float(map_item.get('chaosValue'))
+		for map_item in map_price:
+			if map_item.get('name') == item_info['name']:
+				return float(map_item.get('chaosValue'))
 
-	for flask in flask_price:
-		if flask.get('name') == itemName and flask.get('itemClass') == itemClass:
-			return float(flask.get('chaosValue'))
+		for flask in flask_price:
+			if flask.get('name') == item_info['name'] and flask.get('itemClass') == item_info['type']:
+				if 'Vinktar' in item_info['name'] and flask.get('variation') in item_info['explicit']:
+					return float(flask.get('chaosValue'))
+	except BaseException as e:
+		print('error in get_item_value')
+		print(e)
 
 	return 0
 
@@ -91,7 +100,7 @@ def writeFile(text):
 		return
 	elif text is 'init':
 		return
-	else:
+	elif hasattr(text, "__len__"):
 		for k, v in sorted(text.items()):
 			if k is not 'msg':
 				t += str(k)
@@ -102,6 +111,9 @@ def writeFile(text):
 			f.write(t)
 			f.write('\n')
 		return
+	else:
+		with open(filename, "a+") as f:
+			f.write(str(text))
 
 def links(sockets):
 	link_count = 0
@@ -144,10 +156,15 @@ def find_items(stashes):
 			sockets_count = len(sockets)
 			links_count = links(sockets)
 			skip = False
+			explicit = item.get('explicitMods')
 
 			ShowCorrupted = config['Filter']['ShowCorrupted']
 			AllowCorrupted = config['Filter']['AllowCorrupted']
 			IgnoreList = config['Filter']['Ignore']
+
+			# if 'Vinktar' in name:
+			# 	print(item)
+			# 	writeFile(item)
 
 			if (not skip) and item.get('league') != league:
 				dprint('Filter | League {} not {}'.format(item.get('league'), league))
@@ -170,7 +187,12 @@ def find_items(stashes):
 					continue
 
 				price_normalized = float(re.findall(r'\d+', price)[0])
-				item_value = get_item_value(name, frameType)
+				item_info = {
+					'name': name,
+					'type': frameType,
+					'explicit': explicit,
+				}
+				item_value = get_item_value(item_info)
 
 				# File output setup
 				if (not skip) and ((item_value is 0) or ((item_value - price_normalized) < 3.0) or (price_normalized is 0)):
@@ -218,7 +240,8 @@ def find_items(stashes):
 							'Profit': '{}c'.format(profit),
 							'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
 							'Type': getFrameType(frameType),
-							'Info': '{}S {}L'.format(sockets_count, links_count),
+							'Explicit': '{}'.format(item.get('explicitMods')),
+							'Info': '[{}S {}L]'.format(sockets_count, links_count),
 							'ILVL': item.get('ilvl'),
 							'msg': msg
 						}
@@ -244,7 +267,7 @@ def find_items(stashes):
 						# else:
 						# 	print('Price is {} so skipping').format(price)
 					except BaseException as e:
-						exc_type, exc_tb = sys.exc_info()
+						exc_type, esc_obj, exc_tb = sys.exc_info()
 						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 						print('Error in find_items:')
 						print(exc_type, fname, exc_tb.tb_lineno)
@@ -312,7 +335,7 @@ def main():
 			print("Closing sniper.py")
 			sys.exit(1)
 		except BaseException as e:
-			exc_type, exc_tb = sys.exc_info()
+			exc_type, esc_obj, exc_tb = sys.exc_info()
 			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 			print('Error in main:')
 			print(exc_type, fname, exc_tb.tb_lineno)
