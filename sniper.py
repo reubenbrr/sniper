@@ -1,3 +1,5 @@
+# _*_ coding:utf-8 _*_
+
 import time
 import requests
 import re
@@ -171,7 +173,7 @@ def find_items(stashes):
 				dprint('Filter | League {} not {}'.format(item.get('league'), league))
 				skip = True
 
-			if (not skip) and (int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9):
+			if int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9:
 				dprint('Filter | Item type {} is not 3,4,5,6,9'.format(frameType))
 				skip = True
 
@@ -201,11 +203,12 @@ def find_items(stashes):
 					skip = True
 
 				# If config set to hide corrupted gear
-				if (not skip) and (ShowCorrupted != 'True' and ShowCorrupted != 'true') and (getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (item.get('corrupted') is True):
-					for AllowName in AllowCorrupted:
-						if AllowName not in name:
-							vprint('Filter | "{}" corrupted. Item type: {}|{}'.format(name, getFrameType(frameType), frameType))
-							skip = True
+				if not skip:
+					if (ShowCorrupted != 'True' and ShowCorrupted != 'true') and (getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (item.get('corrupted') is True):
+						for AllowName in AllowCorrupted:
+							if AllowName not in name:
+								vprint('Filter | "{}" corrupted. Item type: {}|{}'.format(name, getFrameType(frameType), frameType))
+								skip = True
 
 				#If item is included in ignore list
 				if not skip:
@@ -231,10 +234,10 @@ def find_items(stashes):
 						msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, stashName, item.get('x'), item.get('y'))
 						console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
 						alert = False
-						alert_percent_high = config['Output']['AlertThreshold']['PercentHigh']
-						alert_profit_high = config['Output']['AlertThreshold']['ProfitHigh']
-						alert_percent_mid = config['Output']['AlertThreshold']['PercentMid']
-						alert_profit_mid = config['Output']['AlertThreshold']['ProfitMid']
+						alert_percent_high = int(config['Output']['AlertThreshold']['PercentHigh'])
+						alert_profit_high = int(config['Output']['AlertThreshold']['ProfitHigh'])
+						alert_percent_mid = int(config['Output']['AlertThreshold']['PercentMid'])
+						alert_profit_mid = int(config['Output']['AlertThreshold']['ProfitMid'])
 
 						file_content = {
 							'Corrupted': item.get('corrupted'),
@@ -247,17 +250,17 @@ def find_items(stashes):
 							'msg': msg
 						}
 
-						# if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
-						#  	alert = 3
-						# elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
-						#  	alert = 2
-						# else:
-						# 	alert = False
+						if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
+						 	alert = 3
+						elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
+						 	alert = 2
+						else:
+							alert = False
 
 
 						# if price > 0:
 						if alert != False:
-							console.log('Alert level: '+alert)
+							print('Alert level: {}'.format(alert))
 							for x in range(alert):
 								print('\a')
 						print(console)
