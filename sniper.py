@@ -100,7 +100,10 @@ def writeFile(text):
 		return
 	elif text is 'init':
 		return
-	elif hasattr(text, "__len__"):
+	elif isinstance(text, str):
+		with open(filename, "a+") as f:
+			f.write(str(text))
+	else:
 		for k, v in sorted(text.items()):
 			if k is not 'msg':
 				t += str(k)
@@ -111,9 +114,7 @@ def writeFile(text):
 			f.write(t)
 			f.write('\n')
 		return
-	else:
-		with open(filename, "a+") as f:
-			f.write(str(text))
+
 
 def links(sockets):
 	link_count = 0
@@ -255,10 +256,10 @@ def find_items(stashes):
 
 
 						# if price > 0:
-						# if alert != False:
-						# 	console.log('Alert level: '+alert)
-						# 	for x in alert:
-						# 		print('\a')
+						if alert != False:
+							console.log('Alert level: '+alert)
+							for x in range(alert):
+								print('\a')
 						print(console)
 						try:
 							writeFile(file_content)
