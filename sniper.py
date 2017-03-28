@@ -51,7 +51,7 @@ def get_item_value(itemName, itemClass):
 			return float(map_item.get('chaosValue'))
 
 	for flask in flask_price:
-		if flask.get('name') == itemName:
+		if flask.get('name') == itemName and flask.get('itemClass') == itemClass:
 			return float(flask.get('chaosValue'))
 
 	return 0
@@ -244,7 +244,7 @@ def find_items(stashes):
 						# else:
 						# 	print('Price is {} so skipping').format(price)
 					except BaseException as e:
-						exc_type, exc_obj, exc_tb = sys.exc_info()
+						exc_type, exc_tb = sys.exc_info()
 						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 						print('Error in find_items:')
 						print(exc_type, fname, exc_tb.tb_lineno)
@@ -309,10 +309,10 @@ def main():
 			## wait 5 seconds until parsing next structure
 			time.sleep(0)
 		except KeyboardInterrupt:
-			print("Closing Sniper")
+			print("Closing sniper.py")
 			sys.exit(1)
 		except BaseException as e:
-			exc_type, exc_obj, exc_tb = sys.exc_info()
+			exc_type, exc_tb = sys.exc_info()
 			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 			print('Error in main:')
 			print(exc_type, fname, exc_tb.tb_lineno)
