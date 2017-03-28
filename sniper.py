@@ -62,23 +62,13 @@ def get_item_value(item_info):
 				if 'Vinktar' in item_info['name']:
 					variation = str(flask.get('variant'))
 					explicit = str(item_info['explicit'])
-					print('Vinktar')
-
 					if 'Penetrates' in explicit and "Penetration" in variation:
-						print('Penetration')
-						print(variation)
 						return float(flask.get('chaosValue'))
 					elif 'Attacks' in explicit and 'Added Attacks' in variation:
-						print('Attacks')
-						print(variation)
 						return float(flask.get('chaosValue'))
 					elif 'Spells' in explicit and 'Added Spells' in variation:
-						print('Spells')
-						print(variation)
 						return float(flask.get('chaosValue'))
 					elif 'Converted' in explicit and 'Conversion' in variation:
-						print('Converted')
-						print(variation)
 						return float(flask.get('chaosValue'))
 				else:
 					return float(flask.get('chaosValue'))
