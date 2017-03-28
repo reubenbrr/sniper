@@ -70,6 +70,16 @@ def getFrameType(frameType):
 
 	return frameType
 
+def vprint(text):
+	verbose = config['Output']['ConsoleVerbose']
+	if verbose is True or verbose == 'true' or verbose == 'True':
+		print(text)
+
+def dprint(text):
+	debug = config['Output']['Debug']
+	if debug is True or debug == 'true' or debug == 'True':
+		print(text)
+
 def writeFile(text):
 	t = ''
 	filename = config['Output']['FileName']+'.log'
@@ -103,7 +113,7 @@ def links(sockets):
 				link_count = temp
 		except KeyError:
 			print('KeyError in links()')
-		except:
+		except BaseException:
 			print('Error in links()')
 
 	return link_count
@@ -119,114 +129,127 @@ def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
 def find_items(stashes):
 	# scan stashes available...
 	for stash in stashes:
-		accountName = stash['accountName']
+		#accountName = stash['accountName']
 		lastCharacterName = stash['lastCharacterName']
 		items = stash['items']
 		stashName = stash.get('stash')
-
+		league = config['Filter']['League']
 		# scan items
 		for item in items:
+			typeLine = item.get('typeLine', None)
+			name = re.sub(r'<<.*>>', '', item.get('name', None))
+			price = item.get('note', None)
+			frameType = item.get('frameType', None)
+			sockets = item.get('sockets')
+			sockets_count = len(sockets)
+			links_count = links(sockets)
+			skip = False
 
-			if item.get('league') == 'Legacy':
-				typeLine = item.get('typeLine', None)
-				name = re.sub(r'<<.*>>', '', item.get('name', None))
-				price = item.get('note', None)
-				frameType = item.get('frameType', None)
-				sockets = item.get('sockets')
-				sockets_count = len(sockets)
-				links_count = links(sockets)
+			ShowCorrupted = config['Filter']['ShowCorrupted']
+			AllowCorrupted = config['Filter']['AllowCorrupted']
+			IgnoreList = config['Filter']['Ignore']
 
-				ShowCorrupted = config['Filter']['ShowCorrupted']
-				AllowCorrupted = config['Filter']['AllowCorrupted']
-				IgnoreList = config['Filter']['Ignore']
+			if (not skip) and item.get('league') != league:
+				dprint('Filter | League {} not {}'.format(item.get('league'), league))
+				skip = True
 
-				item_ignored = False
+			if (not skip) and (int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9):
+				dprint('Filter | Item type {} is not 3,4,5,6,9'.format(frameType))
+				skip = True
 
-				# for divination
-				if name is None or name == "":
-					name = typeLine
+			# for divination
+			if name is None or name == "":
+				name = typeLine
 
-				## compare unique that worth at least 1 chaos.
-				if price and name and 'chaos' in price:
-					try:
-						if not re.findall(r'\d+', price)[0]:
-							continue
-					except:
+			## compare unique that worth at least 1 chaos.
+			if price and name and 'chaos' in price:
+				try:
+					if not re.findall(r'\d+', price)[0]:
 						continue
+				except BaseException:
+					continue
 
-					price_normalized = float(re.findall(r'\d+', price)[0])
+				price_normalized = float(re.findall(r'\d+', price)[0])
+				item_value = get_item_value(name, frameType)
 
-					item_value = get_item_value(name, frameType)
+				# File output setup
+				if (not skip) and ((item_value is 0) or ((item_value - price_normalized) < 3.0) or (price_normalized is 0)):
+					dprint('Filter | "{}" price not within range'.format(name))
+					skip = True
 
-					# File output setup
-					if item_value is not 0 and (item_value - price_normalized) > 3.0 and price_normalized is not 0:
-						skip = False
+				# If config set to hide corrupted gear
+				if (not skip) and (ShowCorrupted != 'True' and ShowCorrupted != 'true') and (getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (item.get('corrupted') is True):
+					for AllowName in AllowCorrupted:
+						if AllowName not in name:
+							vprint('Filter | "{}" corrupted. Item type: {}|{}'.format(name, getFrameType(frameType), frameType))
+							skip = True
 
-						# If config set to hide corrupted gear
-						if ShowCorrupted == 'false' and ((frameType is 'Relic' or 'Unique') and item.get('corrupted') == True):
-							for AllowName in AllowCorrupted:
-								if AllowName not in name:
-									print('Skipping item "'+name+'" for being corrupted')
-									skip = True
+				#If item is included in ignore list
+				if not skip:
+					for ignore in IgnoreList:
+						if str(ignore) in name:
+							skip = True
+							vprint('Filter | "{}" name contains "{}"'.format(name, ignore))
 
-						for ignore in IgnoreList:
-							if str(ignore) in name:
-								skip = True
-								print('Skipping item "'+name+'" for containing "'+ignore+'" from filter')
+				#If item cannot be 6socketed
+				# todo - fix this so that it only works on chests / 2h weapons
+				# if (skip == False) and ((getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (int(item.get('ilvl')) < int(config['Filter']['MinIlvl']))):
+				# 	vprint('Filter | "{}" ilvl not in range "{}" for item type {}'.format(item.get('ilvl'), config['Filter']['MinIlvl'], getFrameType(frameType)))
+				# 	skip = True
 
-						# If item cannot be 6socketed
-						# if (frameType is 'Relic' or 'Unique' and item.get('ilvl') < config['Filter']['MinIlvl']):
-						# 	continue
-						if skip is not True:
-							price = price.replace("~b/o ", "")
-							price = price.replace("~price ", "")
+				if skip == False:
+					price = price.replace("~b/o ", "")
+					price = price.replace("~price ", "")
 
-							try:
-								#time_scanned = datetime.now().time()
-								cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
-								perc_decrease = ((item_value - price_normalized) / item_value) * 100
-								prefix = "[{} - {}c/{}c - {}%]".format(getFrameType(frameType), price_normalized, item_value, round(perc_decrease))
-								profit = round(item_value - price_normalized)
-								msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, stashName, item.get('x'), item.get('y'))
-								console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
-								alert = False
-								alert_percent_high = config['Output']['AlertTheshold']['PercentHigh']
-								alert_profit_high = config['Output']['AlertTheshold']['ProfitHigh']
-								alert_percent_mid = config['Output']['AlertTheshold']['PercentMid']
-								alert_profit_mid = config['Output']['AlertTheshold']['ProfitMid']
+					try:
+						cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
+						perc_decrease = ((item_value - price_normalized) / item_value) * 100
+						profit = round(item_value - price_normalized)
+						msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, stashName, item.get('x'), item.get('y'))
+						console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
+						alert = False
+						alert_percent_high = config['Output']['AlertThreshold']['PercentHigh']
+						alert_profit_high = config['Output']['AlertThreshold']['ProfitHigh']
+						alert_percent_mid = config['Output']['AlertThreshold']['PercentMid']
+						alert_profit_mid = config['Output']['AlertThreshold']['ProfitMid']
 
-								file_content = {
-									'Corrupted': item.get('corrupted'),
-									'Profit': '{}c'.format(profit),
-									'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
-									'Type': getFrameType(frameType),
-									'Info': '{}S {}L'.format(sockets_count, links_count),
-									'ILVL': item.get('ilvl'),
-									'msg': msg
-								}
+						file_content = {
+							'Corrupted': item.get('corrupted'),
+							'Profit': '{}c'.format(profit),
+							'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
+							'Type': getFrameType(frameType),
+							'Info': '{}S {}L'.format(sockets_count, links_count),
+							'ILVL': item.get('ilvl'),
+							'msg': msg
+						}
 
-								if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
-								 	alert = 3
-								elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
-								 	alert = 2
-								else:
-									alert = False
+						# if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
+						#  	alert = 3
+						# elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
+						#  	alert = 2
+						# else:
+						# 	alert = False
 
 
-								# if price > 0:
-								if alert != False:
-									console.log('Alert level: '+alert)
-									for x in range(0, alert):
-										print ('\a')
-								print(console)
-								try:
-									writeFile(file_content)
-								except:
-									print('error writing file')
-								# else:
-								# 	print('Price is {} so skipping').format(price)
-							except BaseException as e:
-								pass
+						# if price > 0:
+						# if alert != False:
+						# 	console.log('Alert level: '+alert)
+						# 	for x in alert:
+						# 		print('\a')
+						print(console)
+						try:
+							writeFile(file_content)
+						except:
+							print('error writing file')
+						# else:
+						# 	print('Price is {} so skipping').format(price)
+					except BaseException as e:
+						exc_type, exc_obj, exc_tb = sys.exc_info()
+						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+						print('Error in find_items:')
+						print(exc_type, fname, exc_tb.tb_lineno)
+						print(e)
+						pass
 
 def main():
 	global armor_price
@@ -289,6 +312,10 @@ def main():
 			print("Closing Sniper")
 			sys.exit(1)
 		except BaseException as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			print('Error in main:')
+			print(exc_type, fname, exc_tb.tb_lineno)
 			print(e)
 			sys.exit(1)
 
