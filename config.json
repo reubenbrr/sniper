@@ -31,7 +31,7 @@
 		"FileName": "itemlist",
 		"Debug": "false",
 		"LogVerbose": "true",
-		"ConsoleVerbose": "true",
+		"ConsoleVerbose": "false",
 		"CleanFile": "false",
 		"Alert": "true",
 		"AlertThreshold": {
