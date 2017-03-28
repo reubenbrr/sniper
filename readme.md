@@ -11,3 +11,8 @@ pip install requests
 ```
 sniper.py
 ```
+
+### todo
+- Currency
+- Fix league requests for poe.ninja
+- Vinktar flask variations

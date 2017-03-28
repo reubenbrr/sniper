@@ -59,8 +59,24 @@ def get_item_value(item_info):
 
 		for flask in flask_price:
 			if flask.get('name') == item_info['name'] and flask.get('itemClass') == item_info['type']:
-				if 'Vinktar' in item_info['name'] and flask.get('variation') in item_info['explicit']:
+				if 'Vinktar' in item_info['name']:
+					variation = str(flask.get('variation'))
+					explicit = str(item_info['explicit'])
+
+					print(variation)
+
+					if 'Penetration' in explicit and variation is "Penetration":
+						return float(flask.get('chaosValue'))
+					elif 'Attacks' in explicit and variation is 'Added Attacks':
+						return float(flask.get('chaosValue'))
+					elif 'Spells' in explicit and variation is 'Added Spells':
+						return float(flask.get('chaosValue'))
+					elif 'Converted' in explicit and variation is 'Conversion':
+						return float(flask.get('chaosValue'))
+
+				else:
 					return float(flask.get('chaosValue'))
+
 	except BaseException as e:
 		print('error in get_item_value')
 		print(e)
@@ -193,7 +209,7 @@ def find_items(stashes):
 				item_info = {
 					'name': name,
 					'type': frameType,
-					'explicit': explicit,
+					'explicit': explicit
 				}
 				item_value = get_item_value(item_info)
 
@@ -261,7 +277,7 @@ def find_items(stashes):
 						# if price > 0:
 						if alert != False:
 							print('Alert level: {}'.format(alert))
-							for x in range(alert):
+							for i in range(alert):
 								print('\a')
 						print(console)
 						try:
