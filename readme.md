@@ -17,3 +17,4 @@ sniper.py
 - Currency
 - Fix league requests for poe.ninja
 - Fix links function for returning item links
+- Clean up multiple declarations of vars

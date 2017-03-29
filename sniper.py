@@ -259,7 +259,6 @@ def find_items(stashes):
 				try:
 
 					if skip == False:
-						print(skip)
 						frameType = item.get('frameType', None)
 						price_normalized = float(re.findall(r'\d+', price)[0])
 						explicit = item.get('explicitMods')
