@@ -154,8 +154,7 @@ def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
 
 def validate_item(item):
 	skip = False
-	return(item)
-	#print(item.get('name'))
+	return(item.get('name'))
 
 def find_items(stashes):
 	# scan stashes available...
@@ -184,6 +183,16 @@ def find_items(stashes):
 			IgnoreList = config['Filter']['Ignore']
 			MinProfit = float(config['Filter']['MinProfit'])
 
+			if (not skip) and item.get('league') != league:
+				dprint('Filter | League {} not {}'.format(item.get('league'), league))
+				skip = True
+			if (not skip) and (int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9):
+				dprint('Filter | Item type {} is not 3,4,5,6,9'.format(frameType))
+				skip = True
+			# for divination
+			if name is None or name == "":
+				name = typeLine
+			# Exclude any items not worth more than chaos
 			if price and name and 'chaos' in price:
 				try:
 					if not re.findall(r'\d+', price)[0]:
