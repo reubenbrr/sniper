@@ -13,5 +13,7 @@ sniper.py
 ```
 
 ### todo
+- Possible output to flat file database for web usage
 - Currency
 - Fix league requests for poe.ninja
+- Fix links function for returning item links
