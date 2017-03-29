@@ -8,6 +8,7 @@
 			"6",
 			"9"
 		],
+		"MinProfit": "5",
 		"League": "Legacy",
 		"ShowCorrupted": "false",
 		"AllowCorrupted": [

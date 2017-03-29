@@ -176,16 +176,13 @@ def find_items(stashes):
 			ShowCorrupted = config['Filter']['ShowCorrupted']
 			AllowCorrupted = config['Filter']['AllowCorrupted']
 			IgnoreList = config['Filter']['Ignore']
-
-			# if 'Vinktar' in name:
-			# 	print(item)
-			# 	writeFile(item)
+			MinProfit = float(config['Filter']['MinProfit'])
 
 			if (not skip) and item.get('league') != league:
 				dprint('Filter | League {} not {}'.format(item.get('league'), league))
 				skip = True
 
-			if int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9:
+			if (not skip) and (int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9):
 				dprint('Filter | Item type {} is not 3,4,5,6,9'.format(frameType))
 				skip = True
 
@@ -193,7 +190,7 @@ def find_items(stashes):
 			if name is None or name == "":
 				name = typeLine
 
-			## compare unique that worth at least 1 chaos.
+			# Exclude any items not worth more than chaos
 			if price and name and 'chaos' in price:
 				try:
 					if not re.findall(r'\d+', price)[0]:
@@ -208,10 +205,11 @@ def find_items(stashes):
 					'explicit': explicit
 				}
 				item_value = get_item_value(item_info)
+				profit = float(item_value - price_normalized)
 
-				# File output setup
-				if (not skip) and ((item_value is 0) or ((item_value - price_normalized) < 3.0) or (price_normalized is 0)):
-					dprint('Filter | "{}" price not within range'.format(name))
+				# Filter low value, or 0 price
+				if (not skip) and ((item_value is 0) or (profit < MinProfit) or (price_normalized is 0)):
+					dprint('Filter | "{}" price not within range: {} < {}'.format(name, profit, MinProfit))
 					skip = True
 
 				# If config set to hide corrupted gear
@@ -280,9 +278,6 @@ def find_items(stashes):
 						except:
 							print('error writing file')
 
-
-						# else:
-						# 	print('Price is {} so skipping').format(price)
 					except BaseException as e:
 						exc_type, esc_obj, exc_tb = sys.exc_info()
 						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
