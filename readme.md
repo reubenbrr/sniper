@@ -1,5 +1,6 @@
 # sniper_poe
 ### Writes scanned items to sniper.log
+#### Credit to flacostec for the original script
 
 ## install instructions
 - Required: Python3.5
