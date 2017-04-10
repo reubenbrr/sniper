@@ -1,4 +1,7 @@
-# sniper_poe
+# Sniper
+## A Path of exile Trade tool
+
+
 ### Writes scanned items to sniper.log
 #### Credit to flacostec for the original script
 
