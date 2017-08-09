@@ -270,17 +270,26 @@ def find_items(stashes):
 
 						price = price.replace("~b/o ", "")
 						price = price.replace("~price ", "")
+
 						try:
 							cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
 							perc_decrease = ((item_value - price_normalized) / item_value) * 100
 							profit = round(item_value - price_normalized)
 							msg = "@{} Hi, I would like to buy your {} listed for {} in {} (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, config['Filter']['League'], stashName, item.get('x'), item.get('y'))
 							console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
+							price_int = int(price.replace(" chaos", ""))
+							write = True
 							alert = False
 							alert_percent_high = int(config['Output']['AlertThreshold']['PercentHigh'])
 							alert_profit_high = int(config['Output']['AlertThreshold']['ProfitHigh'])
 							alert_percent_mid = int(config['Output']['AlertThreshold']['PercentMid'])
 							alert_profit_mid = int(config['Output']['AlertThreshold']['ProfitMid'])
+							max_spend = int(config['Output']['MaxSpend'])
+
+							# Checks if item is worth more currency than is set for max spending
+							if ('chaos' in price) & (price_int > max_spend):
+								print('price {} is greater than max spend {}'.format(price, max_spend))
+								write = False
 
 							file_content = {
 								'Corrupted': item.get('corrupted'),
@@ -303,11 +312,12 @@ def find_items(stashes):
 							print(console)
 
 							try:
-								if alert != False:
-									vprint('Alert level: {}'.format(alert))
-									for _ in range(alert):
-										print('\a')
-								writeFile(file_content)
+								if write:
+									if alert != False:
+										vprint('Alert level: {}'.format(alert))
+										for _ in range(alert):
+											print('\a')
+									writeFile(file_content)
 							except BaseException as e:
 								print('error writing file')
 								print(e)

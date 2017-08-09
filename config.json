@@ -35,6 +35,7 @@
 		"ConsoleVerbose": "false",
 		"CleanFile": "false",
 		"Alert": "true",
+		"MaxSpend": "15",
 		"AlertThreshold": {
 			"PercentHigh": "50",
 			"PercentMid": "30",
