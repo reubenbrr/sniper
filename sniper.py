@@ -1,17 +1,13 @@
 # _*_ coding:utf-8 _*_
 
 import time
-import requests
+from difflib import SequenceMatcher
+import json
 import re
 import sys
-import datetime
-from datetime import datetime
 import os.path
-import configparser
 import os
-import json
-from pprint import pprint
-from difflib import SequenceMatcher
+import requests
 # pylint: disable=W0312, C0301, C0111, C0103, C0330, W0602, C0111,
 
 armor_price = []
@@ -257,7 +253,6 @@ def find_items(stashes):
 					print('error in chaos find')
 					print(e)
 				try:
-
 					if skip == False:
 						frameType = item.get('frameType', None)
 						price_normalized = float(re.findall(r'\d+', price)[0])
@@ -279,7 +274,7 @@ def find_items(stashes):
 							cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
 							perc_decrease = ((item_value - price_normalized) / item_value) * 100
 							profit = round(item_value - price_normalized)
-							msg = "@{} Hi, I would like to buy your {} listed for {} in Legacy (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, stashName, item.get('x'), item.get('y'))
+							msg = "@{} Hi, I would like to buy your {} listed for {} in {} (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, config['Filter']['League'], stashName, item.get('x'), item.get('y'))
 							console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
 							alert = False
 							alert_percent_high = int(config['Output']['AlertThreshold']['PercentHigh'])
@@ -342,35 +337,41 @@ def main():
 	writeFile('init')
 	url_api = "http://www.pathofexile.com/api/public-stash-tabs?id="
 
-	# get the next change id
-	r = requests.get("http://api.poe.ninja/api/Data/GetStats")
-	next_change_id = r.json().get('nextChangeId')
+	try:
+		# get the next change id
+		r = requests.get("http://api.poe.ninja/api/Data/GetStats")
+		next_change_id = r.json().get('nextChangeId')
 
-	# get unique armour value
-	url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueArmourOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
-	r = requests.get(url_ninja)
-	armor_price = r.json().get('lines')
+		# get unique armour value
+		url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueArmourOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		r = requests.get(url_ninja)
+		armor_price = r.json().get('lines')
 
-	# get unique weapons
-	url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueWeaponOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
-	r = requests.get(url_ninja)
-	weps_price = r.json().get('lines')
+		# get unique weapons
+		url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueWeaponOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		r = requests.get(url_ninja)
+		weps_price = r.json().get('lines')
 
-	# get divination card
-	url_divi = "http://api.poe.ninja/api/Data/GetDivinationCardsOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
-	r = requests.get(url_divi)
-	div_price = r.json().get('lines')
+		# get divination card
+		url_divi = "http://api.poe.ninja/api/Data/GetDivinationCardsOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		r = requests.get(url_divi)
+		div_price = r.json().get('lines')
 
-	# get maps
-	url_map = "http://api.poe.ninja/api/Data/GetMapOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
-	r = requests.get(url_map)
-	map_price = r.json().get('lines')
+		# get maps
+		url_map = "http://api.poe.ninja/api/Data/GetMapOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		r = requests.get(url_map)
+		map_price = r.json().get('lines')
 
-	# get flask
-	url_map = "http://cdn.poe.ninja/api/Data/GetUniqueFlaskOverview?league=Legacy&date=" + time.strftime("%Y-%m-%d")
-	r = requests.get(url_map)
-	flask_price = r.json().get('lines')
-
+		# get flask
+		url_map = "http://cdn.poe.ninja/api/Data/GetUniqueFlaskOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		r = requests.get(url_map)
+		flask_price = r.json().get('lines')
+	except BaseException as e:
+		exc_type, esc_obj, exc_tb = sys.exc_info()
+		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+		print('Error in main():')
+		print(exc_type, fname, exc_tb.tb_lineno)
+		print(e)
 
 	while True:
 		try:
