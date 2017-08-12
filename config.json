@@ -31,11 +31,11 @@
 	"Output": {
 		"FileName": "itemlist",
 		"Debug": "false",
-		"LogVerbose": "true",
-		"ConsoleVerbose": "false",
-		"CleanFile": "false",
+		"LogVerbose": "false",
+		"ConsoleVerbose": "true",
+		"CleanFile": "true",
 		"Alert": "true",
-		"MaxSpend": "15",
+		"MaxSpend": "25",
 		"AlertThreshold": {
 			"PercentHigh": "50",
 			"PercentMid": "30",

@@ -148,79 +148,97 @@ def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
         f = lambda obj: str(obj).encode(enc, errors='backslashreplace').decode(enc)
         print(*map(f, objects), sep=sep, end=end, file=file)
 
-def validate_item(item):
 
-	## Bool for skipping item if all conditions are not met
-	skip = False
+def get_first(iterable, default=None):
+    if iterable:
+        for item in iterable:
+            return item
+    return default
+
+def validate_item(item):
+	## Returns whether item is valid based on price and config settings
 	try:
 		price = item.get('note', None)
 		name = re.sub(r'<<.*>>', '', item.get('name', None))
 
 		if price and name and 'chaos' in price:
 			try:
-				if not re.findall(r'\d+', price)[0]:
-					skip = True
+				if not get_first(re.findall(r'\d+', price)):
+					return False
+				else:
+					league = config['Filter']['League']
+					frameType = item.get('frameType', None)
+					max_spend = int(config['Output']['MaxSpend'])
+					price_normalized = float(get_first(re.findall(r'\d+', price)))
+					explicit = item.get('explicitMods')
+					item_info = {
+						'name': name,
+						'type': frameType,
+						'explicit': explicit
+					}
+					item_value = get_item_value(item_info)
+					profit = float(item_value - price_normalized)
+					typeLine = item.get('typeLine', None)
+					# sockets = item.get('sockets')
+					# sockets_count = len(sockets)
+					# links_count = links(sockets)
+					ShowCorrupted = config['Filter']['ShowCorrupted']
+					AllowCorrupted = config['Filter']['AllowCorrupted']
+					IgnoreList = config['Filter']['Ignore']
+					MinProfit = float(config['Filter']['MinProfit'])
+
+					# for setting name of div cards
+					if name is None or name == "":
+						name = typeLine
+
+					# Exclude any items not worth more than chaos
+					# Item in correct league
+					if str(item.get('league')) != str(league):
+						dprint('Filter | League {} not {}'.format(item.get('league'), league))
+						return False
+					# Item is correct type
+					elif int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9:
+						dprint('Filter | Item type {} is not 3,4,5,6,9'.format(frameType))
+						return False
+					# Item profit is below defined amount
+					elif (item_value is 0) or (profit < MinProfit) or (price_normalized < 1):
+						dprint('Filter | "{}" price not within range: {} < {}'.format(name, profit, MinProfit))
+						return False
+					# Item is corrupted and set to hide corrupted
+					if ('chaos' in price) & (price_normalized > max_spend):
+						vprint('Filter | Price {} is greater than max spend {}'.format(price_normalized, max_spend))
+						return False
+					elif (ShowCorrupted != 'True' and ShowCorrupted != 'true') and (getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (item.get('corrupted') is True):
+						for AllowName in AllowCorrupted:
+							if AllowName not in name:
+								vprint('Filter | "{}" corrupted. Item type: {}|{}'.format(name, getFrameType(frameType), frameType))
+								return False
+							else:
+								return True
+					#If item is included in specific ignore list
+					else:
+						for ignore in IgnoreList:
+							if str(ignore) in name:
+								vprint('Filter | "{}" name contains "{}"'.format(name, ignore))
+								return False
+					# Only return true if this block is reached after all filtering, with no errors
+					return True
 			except BaseException as e:
-				print('error in chaos find')
-				print(e)
-			league = config['Filter']['League']
-			frameType = item.get('frameType', None)
-			price_normalized = float(re.findall(r'\d+', price)[0])
-			explicit = item.get('explicitMods')
-			item_info = {
-				'name': name,
-				'type': frameType,
-				'explicit': explicit
-			}
-			item_value = get_item_value(item_info)
-			profit = float(item_value - price_normalized)
-			typeLine = item.get('typeLine', None)
-			# sockets = item.get('sockets')
-			# sockets_count = len(sockets)
-			# links_count = links(sockets)
-			ShowCorrupted = config['Filter']['ShowCorrupted']
-			AllowCorrupted = config['Filter']['AllowCorrupted']
-			IgnoreList = config['Filter']['Ignore']
-			MinProfit = float(config['Filter']['MinProfit'])
-
-			# for setting name of div cards
-			if name is None or name == "":
-				name = typeLine
-
-			# Exclude any items not worth more than chaos
-			# Item in correct league
-			if item.get('league') != league:
-				dprint('Filter | League {} not {}'.format(item.get('league'), league))
-				skip = True
-			# Item is correct type
-			elif int(frameType) != 3 and int(frameType) != 4 and int(frameType) != 5 and int(frameType) != 6 and int(frameType) != 9:
-				dprint('Filter | Item type {} is not 3,4,5,6,9'.format(frameType))
-				skip = True
-			# Item profit is below defined amount
-			elif (item_value is 0) or (profit < MinProfit) or (price_normalized is 0):
-				dprint('Filter | "{}" price not within range: {} < {}'.format(name, profit, MinProfit))
-				skip = True
-			# Item is corrupted and set to hide corrupted
-			elif (ShowCorrupted != 'True' and ShowCorrupted != 'true') and (getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (item.get('corrupted') is True):
-					for AllowName in AllowCorrupted:
-						if AllowName not in name:
-							vprint('Filter | "{}" corrupted. Item type: {}|{}'.format(name, getFrameType(frameType), frameType))
-							skip = True
-			#If item is included in specific ignore list
-			else:
-				for ignore in IgnoreList:
-					if str(ignore) in name:
-						skip = True
-						vprint('Filter | "{}" name contains "{}"'.format(name, ignore))
+				exc_type, esc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				print('Error in chaos find: ')
+				print(exc_type, fname, exc_tb.tb_lineno)
+				return False
+				
+		else:
+			return False
 	except BaseException as e:
 		exc_type, esc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		print('Error in validate_item:')
 		print(exc_type, fname, exc_tb.tb_lineno)
 		print(e)
-
-	#Return whether to skip item
-	return skip
+		return False
 
 def find_items(stashes):
 	# scan stashes available...
@@ -236,8 +254,10 @@ def find_items(stashes):
 			name = re.sub(r'<<.*>>', '', item.get('name', None))
 
 			#Run validation on this item
-			skip = validate_item(item)
-			dprint(skip)
+			item_valid = validate_item(item)
+
+			if item_valid:
+				dprint('item valid: {}'.format(item_valid))
 
 			#If item cannot be 6socketed
 			# todo - fix this so that it only works on chests / 2h weapons
@@ -245,89 +265,75 @@ def find_items(stashes):
 			# 	vprint('Filter | "{}" ilvl not in range "{}" for item type {}'.format(item.get('ilvl'), config['Filter']['MinIlvl'], getFrameType(frameType)))
 			# 	skip = True
 
-			if price and name and 'chaos' in price:
+			if price and name and 'chaos' in price and item_valid:
 				try:
-					if not re.findall(r'\d+', price)[0]:
-						skip = True
-				except BaseException as e:
-					print('error in chaos find')
-					print(e)
-				try:
-					if skip == False:
-						frameType = item.get('frameType', None)
-						price_normalized = float(re.findall(r'\d+', price)[0])
-						explicit = item.get('explicitMods')
-						item_info = {
-							'name': name,
-							'type': frameType,
-							'explicit': explicit
-						}
-						item_value = get_item_value(item_info)
-						profit = float(item_value - price_normalized)
-						sockets = item.get('sockets')
-						sockets_count = len(sockets)
-						links_count = links(sockets)
+					frameType = item.get('frameType', None)
+					price_normalized = float(get_first(re.findall(r'\d+', price)))
+					explicit = item.get('explicitMods')
+					item_info = {
+						'name': name,
+						'type': frameType,
+						'explicit': explicit
+					}
+					item_value = get_item_value(item_info)
+					profit = float(item_value - price_normalized)
+					sockets = item.get('sockets')
+					sockets_count = len(sockets)
+					links_count = links(sockets)
 
-						price = price.replace("~b/o ", "")
-						price = price.replace("~price ", "")
+					price = price.replace("~b/o ", "")
+					price = price.replace("~price ", "")
+					try:
+						cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
+						perc_decrease = ((item_value - price_normalized) / item_value) * 100
+						profit = round(item_value - price_normalized)
+						msg = "@{} Hi, I would like to buy your {} listed for {} in {} (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, config['Filter']['League'], stashName, item.get('x'), item.get('y'))
+						console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))			
+						write = True
+						alert = False
+						alert_percent_high = int(config['Output']['AlertThreshold']['PercentHigh'])
+						alert_profit_high = int(config['Output']['AlertThreshold']['ProfitHigh'])
+						alert_percent_mid = int(config['Output']['AlertThreshold']['PercentMid'])
+						alert_profit_mid = int(config['Output']['AlertThreshold']['ProfitMid'])
+
+						# Checks if item is worth more currency than is set for max spending
+
+						file_content = {
+							'Corrupted': item.get('corrupted'),
+							'Profit': '{}c'.format(profit),
+							'Cost': '{} - {}% profit'.format(cost_vs_average, round(perc_decrease)),
+							'Type': getFrameType(frameType),
+							'Explicit': '{}'.format(item.get('explicitMods')),
+							'Info': '[{}S {}L]'.format(sockets_count, links_count),
+							'ILVL': item.get('ilvl'),
+							'msg': msg
+						}
+
+						if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
+							alert = 3
+						elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
+							alert = 2
+						else:
+							alert = False
 
 						try:
-							cost_vs_average = "{}c/{}c".format(price_normalized, item_value)
-							perc_decrease = ((item_value - price_normalized) / item_value) * 100
-							profit = round(item_value - price_normalized)
-							msg = "@{} Hi, I would like to buy your {} listed for {} in {} (stash tab \"{}\"; position: left {}, top {})".format(lastCharacterName, name, price, config['Filter']['League'], stashName, item.get('x'), item.get('y'))
-							console = "{} [{} - {}] {}-{}%".format(lastCharacterName, getFrameType(frameType), name, cost_vs_average, round(perc_decrease))
-							price_int = int(price.replace(" chaos", ""))
-							write = True
-							alert = False
-							alert_percent_high = int(config['Output']['AlertThreshold']['PercentHigh'])
-							alert_profit_high = int(config['Output']['AlertThreshold']['ProfitHigh'])
-							alert_percent_mid = int(config['Output']['AlertThreshold']['PercentMid'])
-							alert_profit_mid = int(config['Output']['AlertThreshold']['ProfitMid'])
-							max_spend = int(config['Output']['MaxSpend'])
-
-							# Checks if item is worth more currency than is set for max spending
-							if ('chaos' in price) & (price_int > max_spend):
-								print('price {} is greater than max spend {}'.format(price, max_spend))
-								write = False
-
-							file_content = {
-								'Corrupted': item.get('corrupted'),
-								'Profit': '{}c'.format(profit),
-								'Cost': '{} - {}%'.format(cost_vs_average, round(perc_decrease)),
-								'Type': getFrameType(frameType),
-								'Explicit': '{}'.format(item.get('explicitMods')),
-								'Info': '[{}S {}L]'.format(sockets_count, links_count),
-								'ILVL': item.get('ilvl'),
-								'msg': msg
-							}
-
-							if (perc_decrease >= alert_percent_high) or (profit >= alert_profit_high):
-							 	alert = 3
-							elif (perc_decrease >= alert_percent_mid) or (profit >= alert_profit_mid):
-							 	alert = 2
-							else:
-								alert = False
-
-							print(console)
-
-							try:
-								if write:
-									if alert != False:
-										vprint('Alert level: {}'.format(alert))
-										for _ in range(alert):
-											print('\a')
-									writeFile(file_content)
-							except BaseException as e:
-								print('error writing file')
-								print(e)
-
+							if write:
+								print(console)
+								if alert != False:
+									vprint('Alert level: {}'.format(alert))
+									for _ in range(alert):
+										print('\a')
+								writeFile(file_content)
 						except BaseException as e:
-							exc_type, esc_obj, exc_tb = sys.exc_info()
-							fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-							print('Error in find_items skip block:')
-							print(exc_type, fname, exc_tb.tb_lineno)
+							print('error writing file')
 							print(e)
+
+					except BaseException as e:
+						exc_type, esc_obj, exc_tb = sys.exc_info()
+						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+						print('Error in find_items skip block:')
+						print(exc_type, fname, exc_tb.tb_lineno)
+						print(e)
 				except BaseException as e:
 					exc_type, esc_obj, exc_tb = sys.exc_info()
 					fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
