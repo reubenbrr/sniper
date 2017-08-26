@@ -5,6 +5,7 @@ from difflib import SequenceMatcher
 import json
 import re
 import sys
+import codecs
 import os.path
 import os
 import requests
@@ -121,7 +122,7 @@ def writeFile(text):
 			t += str(v)
 			t += '\n'
 		with open(filename, "a+") as f:
-			f.write(t)
+			f.write(str(t))
 			f.write('\n')
 		return
 
@@ -222,14 +223,17 @@ def validate_item(item):
 								vprint('Filter | "{}" name contains "{}"'.format(name, ignore))
 								return False
 					# Only return true if this block is reached after all filtering, with no errors
+					print('true1')
 					return True
+				print('true2')
+				return True
 			except BaseException as e:
 				exc_type, esc_obj, exc_tb = sys.exc_info()
 				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 				print('Error in chaos find: ')
 				print(exc_type, fname, exc_tb.tb_lineno)
 				return False
-				
+			
 		else:
 			return False
 	except BaseException as e:
