@@ -192,7 +192,9 @@ def validate_item(item):
 					if name is None or name == "":
 						name = typeLine
 
-					# Exclude any items not worth more than chaos
+					# Print debug message if correct league
+					if str(item.get('league')) == str(league):
+						dprint('Filter | League {} is equal to {}'.format(item.get('league'), league))
 					# Item in correct league
 					if str(item.get('league')) != str(league):
 						dprint('Filter | League {} not {}'.format(item.get('league'), league))
@@ -205,10 +207,11 @@ def validate_item(item):
 					elif (item_value is 0) or (profit < MinProfit) or (price_normalized < 1):
 						dprint('Filter | "{}" price not within range: {} < {}'.format(name, profit, MinProfit))
 						return False
-					# Item is corrupted and set to hide corrupted
+					# Exclude any items not worth more than chaos
 					if ('chaos' in price) & (price_normalized > max_spend):
 						vprint('Filter | Price {} is greater than max spend {}'.format(price_normalized, max_spend))
 						return False
+					# Item is corrupted and set to hide corrupted
 					elif (ShowCorrupted != 'True' and ShowCorrupted != 'true') and (getFrameType(frameType) == 'Relic' or getFrameType(frameType) == 'Unique') and (item.get('corrupted') is True):
 						for AllowName in AllowCorrupted:
 							if AllowName not in name:
@@ -359,31 +362,32 @@ def main():
 
 	try:
 		# get the next change id
-		r = requests.get("http://api.poe.ninja/api/Data/GetStats")
-		next_change_id = r.json().get('nextChangeId')
+		r = requests.get("http://poe.ninja/api/Data/GetStats")
+		next_change_id = r.json().get('next_change_id')
+		dprint(next_change_id)
 
 		# get unique armour value
-		url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueArmourOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		url_ninja = "http://poe.ninja/api/Data/GetUniqueArmourOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
 		r = requests.get(url_ninja)
 		armor_price = r.json().get('lines')
 
 		# get unique weapons
-		url_ninja = "http://cdn.poe.ninja/api/Data/GetUniqueWeaponOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		url_ninja = "http://poe.ninja/api/Data/GetUniqueWeaponOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
 		r = requests.get(url_ninja)
 		weps_price = r.json().get('lines')
 
 		# get divination card
-		url_divi = "http://api.poe.ninja/api/Data/GetDivinationCardsOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		url_divi = "http://poe.ninja/api/Data/GetDivinationCardsOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
 		r = requests.get(url_divi)
 		div_price = r.json().get('lines')
 
 		# get maps
-		url_map = "http://api.poe.ninja/api/Data/GetMapOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		url_map = "http://poe.ninja/api/Data/GetMapOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
 		r = requests.get(url_map)
 		map_price = r.json().get('lines')
 
 		# get flask
-		url_map = "http://cdn.poe.ninja/api/Data/GetUniqueFlaskOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
+		url_map = "http://poe.ninja/api/Data/GetUniqueFlaskOverview?league="+ config['Filter']['League'] +"&date=" + time.strftime("%Y-%m-%d")
 		r = requests.get(url_map)
 		flask_price = r.json().get('lines')
 	except BaseException as e:
@@ -396,6 +400,7 @@ def main():
 	while True:
 		try:
 			params = {'id': next_change_id}
+			dprint('polling stash id: {}'.format(next_change_id))
 			r = requests.get(url_api, params=params)
 
 			## parsing structure
@@ -403,6 +408,7 @@ def main():
 
 			## setting next change id
 			next_change_id = data['next_change_id']
+			# dprint('polling stash id2: {}'.format(next_change_id))
 
 			## attempt to find items...
 			find_items(data['stashes'])
